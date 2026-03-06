@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Ocultar scrollbar en kiosco */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Evita que el scroll de listas internas "contagie" al scroll global → sin microlags */
+.scroll-contain {
+    overscroll-behavior: contain;
+}
+
+/* El navegador omite pintar las tarjetas fuera de pantalla → menos trabajo GPU */
+.card-lazy {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 320px; /* altura estimada de la tarjeta */
+}
