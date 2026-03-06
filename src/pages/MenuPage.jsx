@@ -17,13 +17,7 @@ const MenuPage = ({ onAddToCart, openCart }) => {
 
     const changeCategory = (catId) => {
         if (activeCategory === catId) return;
-        setIsCategorySwitching(true);
-
-        // Yield to browser to paint instantly
-        setTimeout(() => {
-            setActiveCategory(catId);
-            setIsCategorySwitching(false);
-        }, 15);
+        setActiveCategory(catId);
     };
 
     if (loading) return <div className="p-8 text-center text-gray-500">{t('loading')}</div>;
@@ -94,7 +88,7 @@ const MenuPage = ({ onAddToCart, openCart }) => {
 
                     {/* Main Content Area */}
                     <div className="flex-1 overflow-y-auto p-6 scrollbar-hide scroll-contain relative transform-gpu will-change-scroll">
-                        <div className={`transition-opacity duration-300 ${!isCategorySwitching ? 'opacity-100' : 'opacity-0'} h-full`}>
+                        <div className="h-full">
                             {!activeCategory ? (
                                 /* Category Grid View */
                                 <div className="flex flex-col h-full">

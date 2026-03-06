@@ -43,12 +43,8 @@ const KioskFlow = () => {
     const timerEnabled = step !== 'payment';
 
     const changeStep = (newStep, callback) => {
-        setIsTransitioning(true);
-        setTimeout(() => {
-            if (callback) callback();
-            setStep(newStep);
-            setIsTransitioning(false);
-        }, 15);
+        if (callback) callback();
+        setStep(newStep);
     };
 
     const handleIdle = () => {
@@ -69,24 +65,24 @@ const KioskFlow = () => {
         setShowScreensaver(false);
     };
 
-    const addToCart = (product, modifiers = []) => {
+    const addToCart = React.useCallback((product, modifiers = []) => {
         const cartItem = {
             ...product,
             uniqueId: Date.now(),
             selectedModifiers: modifiers,
             totalPrice: product.price + modifiers.reduce((acc, mod) => acc + mod.price, 0)
         };
-        setCart([...cart, cartItem]);
+        setCart(prev => [...prev, cartItem]);
         setIsCartOpen(true);
-    };
+    }, []);
 
-    const removeFromCart = (uniqueId) => {
-        setCart(cart.filter(item => item.uniqueId !== uniqueId));
-    };
+    const removeFromCart = React.useCallback((uniqueId) => {
+        setCart(prev => prev.filter(item => item.uniqueId !== uniqueId));
+    }, []);
 
-    const updateCartItem = (uniqueId, updatedItem) => {
+    const updateCartItem = React.useCallback((uniqueId, updatedItem) => {
         setCart(prev => prev.map(item => item.uniqueId === uniqueId ? updatedItem : item));
-    };
+    }, []);
 
     const cartTotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
 
@@ -112,15 +108,6 @@ const KioskFlow = () => {
 
     return (
         <>
-            {/* ── Global Transition Spinner ───────────────────────── */}
-            {isTransitioning && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#F9F7F2]/60 backdrop-blur-sm">
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-16 h-16 border-4 border-[#c28744] border-t-[#2C1A0F] rounded-full animate-spin shadow-lg"></div>
-                        <span className="text-[#2C1A0F] font-bold tracking-widest uppercase text-sm">Cargando...</span>
-                    </div>
-                </div>
-            )}
 
             {/* ── Screensaver overlay ─────────────────────────────── */}
             {showScreensaver && (

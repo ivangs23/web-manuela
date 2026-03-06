@@ -201,7 +201,7 @@ export const ProductProvider = ({ children }) => {
     }, []);
 
     // --- PRODUCTS CRUD ---
-    const addProduct = async (newProduct) => {
+    const addProduct = React.useCallback(async (newProduct) => {
         try {
             const { data, error } = await supabase
                 .from('products')
@@ -215,9 +215,9 @@ export const ProductProvider = ({ children }) => {
             console.error('Error adding product:', err);
             return { success: false, error: err.message };
         }
-    };
+    }, []);
 
-    const updateProduct = async (id, updates) => {
+    const updateProduct = React.useCallback(async (id, updates) => {
         try {
             const { error } = await supabase
                 .from('products')
@@ -232,9 +232,9 @@ export const ProductProvider = ({ children }) => {
             console.error('Error updating product:', err);
             return { success: false, error: err.message };
         }
-    };
+    }, []);
 
-    const deleteProduct = async (id) => {
+    const deleteProduct = React.useCallback(async (id) => {
         try {
             const { error } = await supabase
                 .from('products')
@@ -249,12 +249,11 @@ export const ProductProvider = ({ children }) => {
             console.error('Error deleting product:', err);
             return { success: false, error: err.message };
         }
-    };
+    }, []);
 
-    const uploadImage = async (file) => {
+    const uploadImage = React.useCallback(async (file) => {
         try {
             const fileExt = file.name.split('.').pop();
-            // crypto.randomUUID evita colisiones de nombre que Math.random() puede generar
             const fileName = `${crypto.randomUUID()}.${fileExt}`;
             const filePath = `${fileName}`;
 
@@ -275,48 +274,43 @@ export const ProductProvider = ({ children }) => {
             console.error('Error uploading image:', error);
             return { success: false, error: error.message };
         }
-    };
+    }, []);
 
     // --- CATEGORIES CRUD ---
-    const addCategory = async (category) => {
+    const addCategory = React.useCallback(async (category) => {
         try {
             const { data, error } = await supabase.from('categories').insert([category]).select();
             if (error) throw error;
             setCategories(prev => [...prev, ...data]);
             return { success: true };
         } catch (err) { return { success: false, error: err.message }; }
-    };
+    }, []);
 
-    const updateCategory = async (id, updates) => {
+    const updateCategory = React.useCallback(async (id, updates) => {
         try {
             const { error } = await supabase.from('categories').update(updates).eq('id', id);
             if (error) throw error;
             setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
             return { success: true };
         } catch (err) { return { success: false, error: err.message }; }
-    };
+    }, []);
 
-    const deleteCategory = async (id) => {
+    const deleteCategory = React.useCallback(async (id) => {
         try {
             const { error } = await supabase.from('categories').delete().eq('id', id);
             if (error) throw error;
             setCategories(prev => prev.filter(c => c.id !== id));
             return { success: true };
         } catch (err) { return { success: false, error: err.message }; }
-    };
+    }, []);
 
-    const reorderCategories = async (updates) => {
+    const reorderCategories = React.useCallback(async (updates) => {
         try {
-            // updates is an array of objects: { id: category_id, order_index: new_index }
-            // Supabase API doesn't support bulk updates elegantly out-of-the-box in JS client without RPC sometimes, 
-            // but we can loop or do it one by one if it's small.
-            // For a few categories, Promise.all is perfectly fine.
             const promises = updates.map(update =>
                 supabase.from('categories').update({ order_index: update.order_index }).eq('id', update.id)
             );
             await Promise.all(promises);
 
-            // Update local state to reflect the new order
             const updatesMap = new Map(updates.map(u => [u.id, u.order_index]));
             setCategories(prev => {
                 const newCategories = prev.map(c =>
@@ -330,10 +324,9 @@ export const ProductProvider = ({ children }) => {
             console.error('Error reordering categories:', err);
             return { success: false, error: err.message };
         }
-    };
+    }, []);
 
-    const reorderProducts = async (updates) => {
-        // updates: [{ id: productId, order_index: newIndex }]
+    const reorderProducts = React.useCallback(async (updates) => {
         try {
             const promises = updates.map(update =>
                 supabase.from('products').update({ order_index: update.order_index }).eq('id', update.id)
@@ -352,25 +345,23 @@ export const ProductProvider = ({ children }) => {
             console.error('Error reordering products:', err);
             return { success: false, error: err.message };
         }
-    };
+    }, []);
 
     // --- ALLERGENS CRUD ---
-    // Note: When we update/add allergens, we must update both the List (for admin) and the Map (for UI)
-    const addAllergen = async (allergen) => {
+    const addAllergen = React.useCallback(async (allergen) => {
         try {
             const { data, error } = await supabase.from('allergens').insert([allergen]).select();
             if (error) throw error;
 
-            // Setup new state
             const newItem = data[0];
             const newItemList = [...allergensList, newItem];
-            processAllergensData(newItemList); // Re-build map and list
+            processAllergensData(newItemList);
 
             return { success: true };
         } catch (err) { return { success: false, error: err.message }; }
-    };
+    }, [allergensList]);
 
-    const updateAllergen = async (id, updates) => {
+    const updateAllergen = React.useCallback(async (id, updates) => {
         try {
             const { error } = await supabase.from('allergens').update(updates).eq('id', id);
             if (error) throw error;
@@ -380,9 +371,9 @@ export const ProductProvider = ({ children }) => {
 
             return { success: true };
         } catch (err) { return { success: false, error: err.message }; }
-    };
+    }, [allergensList]);
 
-    const deleteAllergen = async (id) => {
+    const deleteAllergen = React.useCallback(async (id) => {
         try {
             const { error } = await supabase.from('allergens').delete().eq('id', id);
             if (error) throw error;
@@ -391,10 +382,9 @@ export const ProductProvider = ({ children }) => {
             processAllergensData(updatedList);
             return { success: true };
         } catch (err) { return { success: false, error: err.message }; }
-    };
+    }, [allergensList]);
 
-
-    const updateSetting = async (key, value) => {
+    const updateSetting = React.useCallback(async (key, value) => {
         try {
             const { error } = await supabase
                 .from('settings')
@@ -406,9 +396,9 @@ export const ProductProvider = ({ children }) => {
             console.error('Error updating setting:', err);
             return { success: false, error: err.message };
         }
-    };
+    }, []);
 
-    const updateProductFeatured = async (id, isFeatured) => {
+    const updateProductFeatured = React.useCallback(async (id, isFeatured) => {
         try {
             const { error } = await supabase
                 .from('products')
@@ -421,12 +411,12 @@ export const ProductProvider = ({ children }) => {
             console.error('Error updating product featured status:', err);
             return { success: false, error: err.message };
         }
-    };
-    const value = {
+    }, []);
+    const value = React.useMemo(() => ({
         products,
         categories,
-        allergens, // The Map Object { id: {label, icon component} }
-        allergensList, // The Array [{id, label, icon: 'StringName'}]
+        allergens,
+        allergensList,
         settings,
         loading,
         error,
@@ -438,7 +428,6 @@ export const ProductProvider = ({ children }) => {
         updateProduct,
         deleteProduct,
         uploadImage,
-        // Entity ops
         addCategory,
         updateCategory,
         deleteCategory,
@@ -454,7 +443,13 @@ export const ProductProvider = ({ children }) => {
         setAssetsCached,
         updateSetting,
         updateProductFeatured
-    };
+    }), [
+        products, categories, allergens, allergensList, settings, loading, error,
+        syncProgress, syncMessage, addProduct, updateProduct, deleteProduct,
+        uploadImage, addCategory, updateCategory, deleteCategory, reorderCategories,
+        reorderProducts, addAllergen, updateAllergen, deleteAllergen,
+        isAssetsCached, setAssetsCached, updateSetting, updateProductFeatured
+    ]);
 
     return (
         <ProductContext.Provider value={value}>
