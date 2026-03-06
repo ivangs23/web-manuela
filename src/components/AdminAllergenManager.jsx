@@ -17,7 +17,7 @@ const IconSelector = ({ value, onChange }) => (
         <select
             value={value}
             onChange={e => onChange(e.target.value)}
-            className="w-full p-2 border border-gray-200 rounded-xl appearance-none bg-white pr-8 text-xs font-bold"
+            className="w-full p-1 border border-gray-200 rounded-xl appearance-none bg-white pr-8 text-xs font-bold"
         >
             {AVAILABLE_ICONS.map(icon => (
                 <option key={icon} value={icon}>{icon}</option>
