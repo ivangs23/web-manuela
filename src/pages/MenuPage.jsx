@@ -58,8 +58,8 @@ const MenuPage = ({ onAddToCart, openCart }) => {
                 <div className="relative z-10 flex flex-col h-full">
 
                     {/* Header */}
-                    <div className="flex justify-between items-center p-6 border-b border-[#2C1A0F]/5">
-                        <div className="flex items-center gap-4 rounded-full bg-white py-2 px-4">
+                    <div className="flex flex-wrap justify-between items-center p-4 md:p-6 border-b border-[#2C1A0F]/5 gap-4">
+                        <div className="flex items-center gap-2 md:gap-4 rounded-full bg-white py-1.5 px-3 md:py-2 md:px-4 shadow-sm min-w-0">
                             {activeCategory && (
                                 <button
                                     onClick={() => {
@@ -71,23 +71,23 @@ const MenuPage = ({ onAddToCart, openCart }) => {
                                             changeCategory(null);
                                         }
                                     }}
-                                    className="p-2 rounded-full bg-[#c28744] text-white hover:bg-[#a06d35] transition-colors shadow-md"
+                                    className="p-1.5 md:p-2 rounded-full bg-[#c28744] text-white hover:bg-[#a06d35] transition-colors shadow-md shrink-0"
                                 >
-                                    <ChevronLeft size={24} />
+                                    <ChevronLeft size={20} className="md:w-6 md:h-6" />
                                 </button>
                             )}
-                            <h2 className="text-3xl font-serif font-bold text-[#2C1A0F] drop-shadow-sm">
+                            <h2 className="text-xl md:text-3xl font-serif font-bold text-[#2C1A0F] drop-shadow-sm truncate">
                                 {activeCategory ? currentCategoryName : "Menu"}
                             </h2>
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 md:gap-4 shrink-0">
                             <button
                                 onClick={() => setShowNutrition(true)}
-                                className="flex items-center gap-2 bg-[#F0EBE0] hover:bg-[#E0D8CC] text-[#2C1A0F] px-4 py-2 rounded-full border border-[#c28744]/20 transition-colors shadow-sm"
+                                className="flex items-center gap-1.5 md:gap-2 bg-[#F0EBE0] hover:bg-[#E0D8CC] text-[#2C1A0F] px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-[#c28744]/20 transition-colors shadow-sm"
                             >
-                                <Info size={18} className="text-[#c28744]" />
-                                <span className="text-xs font-bold uppercase tracking-wide">{t('nutritional_info')}</span>
+                                <Info size={16} className="text-[#c28744] md:w-5 md:h-5" />
+                                <span className="text-[10px] md:text-xs font-bold uppercase tracking-wide">{t('nutritional_info')}</span>
                             </button>
                         </div>
                     </div>

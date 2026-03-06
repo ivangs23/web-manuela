@@ -17,7 +17,7 @@ const IconSelector = ({ value, onChange }) => (
         <select
             value={value}
             onChange={e => onChange(e.target.value)}
-            className="w-full p-3 border border-gray-200 rounded-lg appearance-none bg-white pr-8 text-sm"
+            className="w-full p-2 border border-gray-200 rounded-xl appearance-none bg-white pr-8 text-xs font-bold"
         >
             {AVAILABLE_ICONS.map(icon => (
                 <option key={icon} value={icon}>{icon}</option>
@@ -33,15 +33,15 @@ const IconSelector = ({ value, onChange }) => (
 );
 
 const LangTabs = ({ active, onChange }) => (
-    <div className="flex gap-1 bg-[#2C1A0F]/10 p-0.5 rounded-lg w-fit mb-2 border border-[#c28744]/20">
+    <div className="flex gap-1 bg-[#2C1A0F]/10 p-1 rounded-full w-fit mb-2 border border-[#c28744]/20">
         {LANGS.map(l => (
             <button
                 key={l.code}
                 type="button"
                 onClick={() => onChange(l.code)}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${active === l.code ? 'bg-[#c28744] text-[#12100B] shadow' : 'text-[#5A4033] hover:bg-[#c28744]/10'}`}
+                className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${active === l.code ? 'bg-[#c28744] text-[#12100B] shadow-sm' : 'text-[#5A4033] hover:bg-[#c28744]/10'}`}
             >
-                {l.flag} {l.label}{l.code === 'es' && <span className="opacity-50">*</span>}
+                {l.flag} {l.label}{l.code === 'es' && <span className="opacity-50 text-[8px] ml-0.5">*</span>}
             </button>
         ))}
     </div>
@@ -102,14 +102,14 @@ const AdminAllergenManager = () => {
     const getLabelField = (lang) => lang === 'es' ? 'label' : `label_${lang}`;
 
     return (
-        <div className="bg-[#FFF8E7] rounded-xl shadow-sm border border-[#c28744]/20 p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-gray-800">Gestionar Alérgenos</h3>
+        <div className="bg-[#FFF8E7] rounded-2xl shadow-sm border border-[#c28744]/20 p-4 md:p-6">
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+                <h3 className="text-lg font-serif font-black text-[#2C1A0F]">Gestionar Alérgenos</h3>
                 <button
                     onClick={() => setIsAdding(true)}
-                    className="flex items-center gap-2 bg-[#2C1A0F] text-[#c28744] px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-[#3E2515] transition-colors border border-[#c28744]/20"
+                    className="flex items-center gap-2 bg-[#2C1A0F] text-[#c28744] px-4 py-2 rounded-full text-xs font-bold hover:bg-[#3E2515] transition-all border border-[#c28744]/20 shadow-sm active:scale-95"
                 >
-                    <Plus size={16} /> {t('add')}
+                    <Plus size={14} /> {t('add')}
                 </button>
             </div>
 
@@ -155,9 +155,9 @@ const AdminAllergenManager = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-3">
                 {allergensList.map(al => (
-                    <div key={al.id} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-[#c28744]/20 group shadow-sm">
+                    <div key={al.id} className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-[#c28744]/10 group shadow-sm hover:border-[#c28744]/40 transition-all">
                         {editingId === al.id ? (
                             <div className="flex-1">
                                 <div className="mb-2">
@@ -182,20 +182,22 @@ const AdminAllergenManager = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="bg-[#FFF8E7] p-2 rounded-full border border-[#c28744]/20 text-[#c28744] shrink-0">
-                                    {getIcon(al.icon || 'Alert')}
+                                <div className="bg-[#FFF8E7] p-1.5 rounded-full border border-[#c28744]/20 text-[#c28744] shrink-0">
+                                    {getIcon(al.icon || 'Alert', 16)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <span className="font-bold text-[#2C1A0F] text-sm">{al.label}</span>
-                                    <span className="text-xs text-[#5A4033] ml-2 font-mono">#{al.id}</span>
-                                    <div className="flex gap-2 mt-1 flex-wrap">
-                                        {al.label_en && <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">🇬🇧 {al.label_en}</span>}
-                                        {al.label_pt && <span className="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full">🇵🇹 {al.label_pt}</span>}
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="font-bold text-[#2C1A0F] text-xs truncate">{al.label}</span>
+                                        <span className="text-[10px] text-[#5A4033]/50 font-mono">#{al.id}</span>
+                                    </div>
+                                    <div className="flex gap-1 mt-0.5 flex-wrap">
+                                        {al.label_en && <span className="text-[9px] bg-blue-50/50 text-blue-600 px-1.5 py-0.5 rounded-full">EN</span>}
+                                        {al.label_pt && <span className="text-[9px] bg-green-50/50 text-green-600 px-1.5 py-0.5 rounded-full">PT</span>}
                                     </div>
                                 </div>
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                    <button onClick={() => startEdit(al)} className="text-blue-500 hover:bg-blue-50 p-1 rounded"><Edit2 size={15} /></button>
-                                    <button onClick={() => handleDelete(al.id)} className="text-red-500 hover:bg-red-50 p-1 rounded"><Trash2 size={15} /></button>
+                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                    <button onClick={() => startEdit(al)} className="text-blue-500 hover:bg-blue-50 p-1 rounded-lg"><Edit2 size={13} /></button>
+                                    <button onClick={() => handleDelete(al.id)} className="text-red-500 hover:bg-red-50 p-1 rounded-lg"><Trash2 size={13} /></button>
                                 </div>
                             </>
                         )}
