@@ -21,7 +21,25 @@ const KioskFlow = () => {
     const [orderType, setOrderType] = useState('eat-in'); // default to 'eat-in'
     const [tableNumber, setTableNumber] = useState(() => {
         const params = new URLSearchParams(window.location.search);
-        return params.get('mesa') || params.get('table') || '1'; // Default to table 1 if missing
+        let table = params.get('mesa') || params.get('table');
+
+        // Check if pathname contains mesa=XX (e.g. /mesa=21)
+        if (!table) {
+            const pathMatch = window.location.pathname.match(/\/mesa=(\d+)/i);
+            if (pathMatch) {
+                table = pathMatch[1];
+            }
+        }
+
+        // Check if hash contains mesa=XX (e.g. /#/mesa=21)
+        if (!table) {
+            const hashMatch = window.location.hash.match(/mesa=(\d+)/i);
+            if (hashMatch) {
+                table = hashMatch[1];
+            }
+        }
+
+        return table || '1'; // Default to table 1 if missing
     });
     const [orderNumber, setOrderNumber] = useState(null);
     const [cart, setCart] = useState([]);
@@ -224,9 +242,9 @@ const KioskFlow = () => {
                                 </div>
                             </div>
 
-                            {/* Center Logo - Hidden on mobile to prevent squishing */}
-                            <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-full py-0 z-0">
-                                <img src={logo} alt="Logo" className="h-[120%] w-[500px] object-cover -mt-2" />
+                            {/* Center Logo - Bulletproof clipping avoidance */}
+                            <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[40%] z-[60] pointer-events-none" style={{ overflow: 'visible' }}>
+                                <img src={logo} alt="Logo" className="drop-shadow-sm" style={{ height: '180px', width: 'auto', maxWidth: 'none', objectFit: 'contain' }} />
                             </div>
 
                             <div className="flex items-center gap-2 sm:gap-6 relative z-10 shrink-0">
