@@ -161,15 +161,13 @@ const KioskFlow = () => {
                             <LanguageSwitcher />
                         </div>
 
-                        {/* Logo */}
-                        <div className="w-full p-8 flex justify-center z-10 pt-8 shrink-0">
-                            <div className="flex items-center justify-center gap-3 opacity-90">
-                                <img src={logo} alt="Logo" className="h-[500px] w-auto object-contain drop-shadow-xl absolute top-100" onLoad={handleWelcomeLoad} onError={handleWelcomeLoad} />
-                            </div>
-                        </div>
-
                         {/* Main Content */}
                         <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-[#2C1A0F] animate-fade-in-up px-4 text-center -mt-8">
+                            {/* Logo */}
+                            <div className="flex justify-center items-center w-full ">
+                                <img src={logo} alt="Logo" className="w-[95%] max-w-[600px] md:max-w-[900px] lg:max-w-[1200px] scale-110 md:scale-125 h-auto object-contain drop-shadow-2xl" onLoad={handleWelcomeLoad} onError={handleWelcomeLoad} />
+                            </div>
+
                             <div className="mb-8 w-28 h-28 rounded-full bg-[#1b4d3e] text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500 border-4 border-white/30 backdrop-blur-md">
                                 <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
