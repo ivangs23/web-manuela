@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
-  plugins: [react()],
+  plugins: [react(), basicSsl()],
   build: {
     // Imágenes estáticas < 8 KB → base64 inline (0 peticiones extra al arrancar)
     assetsInlineLimit: 8192,

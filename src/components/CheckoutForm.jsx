@@ -68,7 +68,7 @@ const CheckoutForm = ({ onPaymentSuccess, onCancel, total }) => {
                             {t('processing') || 'Procesando...'}
                         </>
                     ) : (
-                        `${t('pay_now') || 'Pagar ahora'} ${parseFloat(total).toFixed(2)}€`
+                        `${t('pay_now') === 'pay_now' ? 'Pagar ahora' : t('pay_now')} ${parseFloat(total).toFixed(2)}€`
                     )}
                 </button>
 

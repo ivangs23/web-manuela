@@ -10,6 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { peekNextOrderNumber, commitOrderNumber } from '../utils/orderNumberUtils';
 import useInactivityTimer from '../hooks/useInactivityTimer';
+import { supabase } from '../lib/supabase';
 
 const getDefaultTimeout = () => {
     const saved = localStorage.getItem('screensaver_timeout');
@@ -110,13 +111,45 @@ const KioskFlow = () => {
         changeStep('payment');
     };
 
-    const handlePaymentSuccess = () => {
-        if (orderType === 'take-out') {
-            commitOrderNumber();
+    const handlePaymentSuccess = async () => {
+        // Bloquear temporalmente UI mientras guardamos en bdd
+        setIsTransitioning(true);
+
+        try {
+            // Guardar pedido en Supabase
+            // Si es 'eat-in' usamos el número de mesa como número de pedido para la BDD
+            const finalOrderNumber = orderType === 'take-out' 
+                ? orderNumber.toString() 
+                : `MESA-${tableNumber}`;
+
+            const { error } = await supabase.from('pedidos').insert([
+                {
+                    order_number: finalOrderNumber,
+                    order_type: orderType,
+                    table_number: orderType === 'eat-in' ? tableNumber.toString() : null,
+                    total_amount: cartTotal,
+                    items: cart, // El agente local leerá de aquí
+                    status: 'pending'
+                }
+            ]);
+
+            if (error) {
+                console.error("🚨 Error guardando el pedido en Supabase:", error);
+                // Si falla el guardado, aunque el pago sea exitoso,
+                // idealmente el negocio querrá enterarse del pedido igual
+                // (podemos dejar un mensaje de alerta en un sistema más avanzado).
+            }
+        } catch (e) {
+             console.error("Excepción al guardar pedido:", e);
+        } finally {
+            if (orderType === 'take-out') {
+                commitOrderNumber();
+            }
+            setCart([]);
+            setOrderNumber(null);
+            changeStep('welcome');
+            setIsTransitioning(false);
         }
-        setCart([]);
-        setOrderNumber(null);
-        changeStep('welcome');
     };
 
     const handlePaymentCancel = () => {
