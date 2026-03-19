@@ -21,8 +21,37 @@ const AdminPage = () => {
     const [editingProduct, setEditingProduct] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [activeCategory, setActiveCategory] = useState('all');
+    const [activeTab, setActiveTab] = useState('products');
+    const [screensaverTimeout, setScreensaverTimeout] = useState(() => {
+        const saved = localStorage.getItem('screensaver_timeout');
+        return saved ? parseInt(saved, 10) : 60000;
+    });
+    
+    // Restaurant Status Toggle State
+    const [isRestaurantOpen, setIsRestaurantOpen] = useState(true);
+    const [isLoadingStatus, setIsLoadingStatus] = useState(false);
 
+    React.useEffect(() => {
+        if (activeTab === 'settings') {
+            const fetchStatus = async () => {
+                const { data } = await supabase.from('configuracion').select('restaurante_abierto').eq('id', 1).single();
+                if (data) setIsRestaurantOpen(data.restaurante_abierto);
+            };
+            fetchStatus();
+        }
+    }, [activeTab]);
 
+    const toggleRestaurantStatus = async () => {
+        setIsLoadingStatus(true);
+        const newState = !isRestaurantOpen;
+        const { error } = await supabase.from('configuracion').update({ restaurante_abierto: newState }).eq('id', 1);
+        if (!error) {
+            setIsRestaurantOpen(newState);
+        } else {
+            alert('Error al actualizar el estado del restaurante. Comprueba los permisos.');
+        }
+        setIsLoadingStatus(false);
+    };
     const handleTimeoutChange = (e) => {
         const val = parseInt(e.target.value, 10);
         setScreensaverTimeout(val);
@@ -272,6 +301,29 @@ const AdminPage = () => {
                         <h2 className="text-xl font-serif font-black text-[#c28744] mb-6">{t('settings_title')}</h2>
 
 
+                        {/* Restaurant Open/Close Toggle Card */}
+                        <div className="bg-[#1E150A] border border-[#c28744]/20 rounded-2xl p-6 mb-4">
+                            <div className="flex items-center justify-between gap-6">
+                                <div className="flex flex-col gap-1">
+                                    <h3 className="text-[#FFF8E7] font-bold text-lg flex items-center gap-2">
+                                        <MonitorPlay size={20} className="text-[#c28744]" />
+                                        Estado del Restaurante (Apertura/Cierre)
+                                    </h3>
+                                    <p className="text-[#9A7B6A] text-sm">
+                                        Si lo cierras, aparecerá un mensaje de "Cocina Cerrada" que impedirá a los usuarios hacer pedidos en el kiosco.
+                                    </p>
+                                </div>
+                                <div className="shrink-0">
+                                    <button
+                                        onClick={toggleRestaurantStatus}
+                                        disabled={isLoadingStatus}
+                                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors disabled:opacity-50 ${isRestaurantOpen ? 'bg-green-600' : 'bg-red-600'}`}
+                                    >
+                                        <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isRestaurantOpen ? 'translate-x-7' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Screensaver Timeout Card */}
                         <div className="bg-[#1E150A] border border-[#c28744]/20 rounded-2xl p-6 mb-4">

@@ -9,6 +9,8 @@ export const PREDEFINED_TRANSLATIONS = {
         touch_to_start: "Toca para empezar",
 
         // Order Type
+        closed_title: "Cocina Cerrada",
+        closed_message: "En este momento nuestra cocina no admite más pedidos. ¡Disculpa las molestias y vuelve pronto!",
         order_type_title: "¿Cómo quieres tu pedido?",
         eat_in: "Tomar Aquí",
         eat_in_desc: "Servicio en mesa",
@@ -61,6 +63,7 @@ export const PREDEFINED_TRANSLATIONS = {
         collect_ticket: "Recoja su ticket",
 
         // Admin
+        admin_access: "Acceso Administración",
         admin_panel: "Panel de Administración",
         login_title: "Acceso Admin",
         login_subtitle: "Inicia sesión para gestionar el kiosco",
@@ -135,6 +138,8 @@ export const PREDEFINED_TRANSLATIONS = {
         touch_to_start: "Touch to start",
 
         // Order Type
+        closed_title: "Kitchen Closed",
+        closed_message: "Our kitchen is currently not taking any more orders. We apologize for the inconvenience and hope to see you soon!",
         order_type_title: "How do you want your order?",
         eat_in: "Eat In",
         eat_in_desc: "Table service",
@@ -187,6 +192,7 @@ export const PREDEFINED_TRANSLATIONS = {
         collect_ticket: "Collect your ticket",
 
         // Admin
+        admin_access: "Admin Access",
         admin_panel: "Admin Dashboard",
         login_title: "Admin Access",
         login_subtitle: "Login to manage the kiosk",
@@ -261,6 +267,8 @@ export const PREDEFINED_TRANSLATIONS = {
         touch_to_start: "Toque para iniciar",
 
         // Order Type
+        closed_title: "Cozinha Fechada",
+        closed_message: "No momento não estamos aceitando novos pedidos. Pedimos desculpa pelo incómodo e agradecemos a compreensão!",
         order_type_title: "Como você quer seu pedido?",
         eat_in: "Comer Aqui",
         eat_in_desc: "Serviço de mesa",
@@ -313,7 +321,8 @@ export const PREDEFINED_TRANSLATIONS = {
         collect_ticket: "Retire o seu ticket",
 
         // Admin
-        admin_panel: "Painel de Administração",
+        admin_access: "Acesso Administração",
+        admin_panel: "Painel de Administración",
         login_title: "Acesso Admin",
         login_subtitle: "Entrar para gerenciar o quiosque",
         email: "Email",

@@ -3,7 +3,9 @@ import { Routes, Route } from 'react-router-dom';
 import KioskFlow from './pages/KioskFlow';
 import AdminPage from './pages/AdminPage';
 import LoginPage from './pages/LoginPage';
+import LegalPage from './pages/LegalPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import CookieBanner from './components/CookieBanner';
 import { LanguageProvider } from './context/LanguageContext';
 
 import VersionFooter from './components/VersionFooter';
@@ -63,8 +65,10 @@ export default function App() {
               <AdminPage />
             </ProtectedRoute>
           } />
+          <Route path="/legal/:section" element={<LegalPage />} />
         </Routes>
       </AppLoader>
+      <CookieBanner />
       <VersionFooter />
     </LanguageProvider>
   );

@@ -34,6 +34,15 @@ const VersionFooter = () => {
                 >
                     v{version}
                 </span>
+
+                <div className="h-3 w-[1px] bg-white/20 mx-1" />
+
+                <div className="flex gap-3 text-[9px] uppercase tracking-wider font-bold">
+                    <button onClick={() => navigate('/legal/legal')} className="opacity-50 hover:opacity-100 transition-opacity">Legal</button>
+                    <button onClick={() => navigate('/legal/privacy')} className="opacity-50 hover:opacity-100 transition-opacity">Privacidad</button>
+                    <button onClick={() => navigate('/legal/cookies')} className="opacity-50 hover:opacity-100 transition-opacity">Cookies</button>
+                    <button onClick={() => navigate('/legal/terms')} className="opacity-50 hover:opacity-100 transition-opacity">Condiciones</button>
+                </div>
             </div>
         </div>
     );

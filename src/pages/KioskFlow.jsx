@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ChefHat, ShoppingBag, ChevronLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChefHat, ShoppingBag, ChevronLeft, Settings } from 'lucide-react';
 import logo from '../assets/logo.png';
 import saver from '../assets/saver.png';
 import MenuPage from './MenuPage';
@@ -18,6 +19,7 @@ const getDefaultTimeout = () => {
 };
 
 const KioskFlow = () => {
+    const navigate = useNavigate();
     const [step, setStep] = useState('welcome'); // welcome, menu, payment
     const [orderType, setOrderType] = useState('eat-in'); // default to 'eat-in'
     const [tableNumber, setTableNumber] = useState(() => {
@@ -47,6 +49,8 @@ const KioskFlow = () => {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [showScreensaver, setShowScreensaver] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const [isRestaurantOpen, setIsRestaurantOpen] = useState(true); // Default open until checked
+    const [isCheckingStatus, setIsCheckingStatus] = useState(true); // Loading state for status
     const { t } = useLanguage();
 
     // Welcome Loading State Tracker
@@ -57,6 +61,47 @@ const KioskFlow = () => {
     const handleWelcomeLoad = () => {
         setWelcomeLoadedCount(prev => prev + 1);
     };
+
+    // Fetch initial status and subscribe to changes
+    React.useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('configuracion')
+                    .select('restaurante_abierto')
+                    .eq('id', 1)
+                    .single();
+                
+                if (error) {
+                    console.error("Error fetching restaurant status:", error);
+                } else if (data) {
+                    setIsRestaurantOpen(data.restaurante_abierto);
+                }
+            } catch (err) {
+                console.error("Exception fetching restaurant status:", err);
+            } finally {
+                setIsCheckingStatus(false);
+            }
+        };
+
+        fetchStatus();
+
+        // Subscribe to real-time changes
+        const subscription = supabase
+            .channel('configuracion_changes')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'configuracion', filter: 'id=eq.1' }, (payload) => {
+                console.log('Restaurant status changed:', payload.new.restaurante_abierto);
+                setIsRestaurantOpen(payload.new.restaurante_abierto);
+                
+                // If it closed and we are in payment or menu, maybe kick them to welcome? 
+                // For now just the overlay is enough as it blocks everything.
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(subscription);
+        };
+    }, []);
 
     // Don't trigger screensaver during payment (would interrupt the transaction)
     const timerEnabled = step !== 'payment';
@@ -159,6 +204,38 @@ const KioskFlow = () => {
 
     return (
         <>
+            {/* ── Cerrado overlay (Blocks Everything) ──────────────────────── */}
+            {!isCheckingStatus && !isRestaurantOpen && (
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#F9F7F2]">
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 opacity-5" style={{ backgroundImage: `url(${logo})`, backgroundSize: '100px', backgroundRepeat: 'repeat' }} />
+                    
+                    <div className="relative z-10 flex flex-col items-center text-center px-6 animate-fade-in-up">
+                        <div className="w-32 h-32 md:w-48 md:h-48 mb-8 relative">
+                           <div className="absolute inset-0 bg-[#d32f2f]/20 rounded-full animate-ping"></div>
+                           <div className="relative bg-[#d32f2f] text-white w-full h-full rounded-full flex items-center justify-center shadow-2xl border-4 border-white">
+                               <ChefHat size={64} className="md:w-24 md:h-24" />
+                           </div>
+                        </div>
+                        
+                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase mb-6 text-[#2C1A0F] drop-shadow-md">
+                            {t('closed_title') || 'Cocina Cerrada'}
+                        </h1>
+                        <p className="text-xl md:text-3xl text-[#2C1A0F]/80 font-medium max-w-2xl leading-relaxed">
+                            {t('closed_message') || 'En este momento nuestra cocina no admite más pedidos. ¡Disculpa las molestias y vuelve pronto!'}
+                        </p>
+
+                        {/* Admin Bypass Button */}
+                        <button 
+                            onClick={() => navigate('/admin')}
+                            className="mt-12 text-[#2C1A0F]/30 hover:text-[#c28744] transition-colors text-sm font-bold uppercase tracking-widest flex items-center gap-2"
+                        >
+                            <Settings size={16} />
+                            {t('admin_access') || 'Acceso Administración'}
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* ── Screensaver overlay ─────────────────────────────── */}
             {showScreensaver && (
