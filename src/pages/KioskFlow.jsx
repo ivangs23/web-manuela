@@ -18,32 +18,28 @@ const getDefaultTimeout = () => {
     return saved ? parseInt(saved, 10) : 60000; // Default 1 min
 };
 
+const detectTableFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    let table = params.get('mesa') || params.get('table');
+    if (!table) {
+        const pathMatch = window.location.pathname.match(/\/mesa=(\d+)/i);
+        if (pathMatch) table = pathMatch[1];
+    }
+    if (!table) {
+        const hashMatch = window.location.hash.match(/mesa=(\d+)/i);
+        if (hashMatch) table = hashMatch[1];
+    }
+    return table || null;
+};
+
 const KioskFlow = () => {
     const navigate = useNavigate();
-    const [step, setStep] = useState('welcome'); // welcome, menu, payment
-    const [orderType, setOrderType] = useState('eat-in'); // default to 'eat-in'
-    const [tableNumber, setTableNumber] = useState(() => {
-        const params = new URLSearchParams(window.location.search);
-        let table = params.get('mesa') || params.get('table');
-
-        // Check if pathname contains mesa=XX (e.g. /mesa=21)
-        if (!table) {
-            const pathMatch = window.location.pathname.match(/\/mesa=(\d+)/i);
-            if (pathMatch) {
-                table = pathMatch[1];
-            }
-        }
-
-        // Check if hash contains mesa=XX (e.g. /#/mesa=21)
-        if (!table) {
-            const hashMatch = window.location.hash.match(/mesa=(\d+)/i);
-            if (hashMatch) {
-                table = hashMatch[1];
-            }
-        }
-
-        return table || '1'; // Default to table 1 if missing
-    });
+    // tableFromQR: mesa detectada en la URL al cargar (QR). Null = acceso directo.
+    const tableFromQR = React.useRef(detectTableFromUrl());
+    const [step, setStep] = useState(tableFromQR.current ? 'welcome' : 'table_select');
+    const [orderType] = useState('eat-in');
+    const [tableNumber, setTableNumber] = useState(tableFromQR.current || '');
+    const [tableInput, setTableInput] = useState('');
     const [orderNumber, setOrderNumber] = useState(null);
     const [cart, setCart] = useState([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -51,6 +47,7 @@ const KioskFlow = () => {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isRestaurantOpen, setIsRestaurantOpen] = useState(true); // Default open until checked
     const [isCheckingStatus, setIsCheckingStatus] = useState(true); // Loading state for status
+    const [saveOrderError, setSaveOrderError] = useState(false);
     const { t } = useLanguage();
 
     // Welcome Loading State Tracker
@@ -112,14 +109,19 @@ const KioskFlow = () => {
     };
 
     const handleIdle = () => {
-        // Return to welcome and reset state immediately
-        setStep('welcome');
         setCart([]);
-        // Table number remains sticky since it's from the URL parameter
         setOrderNumber(null);
         setIsCartOpen(false);
-        // Show screensaver overlay
         setShowScreensaver(true);
+        if (tableFromQR.current) {
+            // Acceso por QR: volver a bienvenida con la mesa fija del QR
+            setStep('welcome');
+        } else {
+            // Acceso directo: volver a pedir la mesa
+            setTableNumber('');
+            setTableInput('');
+            setStep('table_select');
+        }
     };
 
     const currentTimeout = getDefaultTimeout();
@@ -132,7 +134,7 @@ const KioskFlow = () => {
     const addToCart = React.useCallback((product, modifiers = []) => {
         const cartItem = {
             ...product,
-            uniqueId: Date.now(),
+            uniqueId: crypto.randomUUID(),
             selectedModifiers: modifiers,
             totalPrice: product.price + modifiers.reduce((acc, mod) => acc + mod.price, 0)
         };
@@ -159,12 +161,13 @@ const KioskFlow = () => {
     const handlePaymentSuccess = async () => {
         // Bloquear temporalmente UI mientras guardamos en bdd
         setIsTransitioning(true);
+        setSaveOrderError(false);
 
         try {
             // Guardar pedido en Supabase
             // Si es 'eat-in' usamos el número de mesa como número de pedido para la BDD
-            const finalOrderNumber = orderType === 'take-out' 
-                ? orderNumber.toString() 
+            const finalOrderNumber = orderType === 'take-out'
+                ? orderNumber.toString()
                 : `MESA-${tableNumber}`;
 
             const { error } = await supabase.from('pedidos').insert([
@@ -173,26 +176,29 @@ const KioskFlow = () => {
                     order_type: orderType,
                     table_number: orderType === 'eat-in' ? tableNumber.toString() : null,
                     total_amount: cartTotal,
-                    items: cart, // El agente local leerá de aquí
+                    items: cart,
                     status: 'pending'
                 }
             ]);
 
             if (error) {
                 console.error("🚨 Error guardando el pedido en Supabase:", error);
-                // Si falla el guardado, aunque el pago sea exitoso,
-                // idealmente el negocio querrá enterarse del pedido igual
-                // (podemos dejar un mensaje de alerta en un sistema más avanzado).
+                setSaveOrderError(true);
+                setIsTransitioning(false);
+                return; // No avanzar — el pedido no se guardó
             }
-        } catch (e) {
-             console.error("Excepción al guardar pedido:", e);
-        } finally {
+
+            // Solo si el guardado fue exitoso, completar el flujo
             if (orderType === 'take-out') {
                 commitOrderNumber();
             }
             setCart([]);
             setOrderNumber(null);
             changeStep('welcome');
+        } catch (e) {
+            console.error("Excepción al guardar pedido:", e);
+            setSaveOrderError(true);
+        } finally {
             setIsTransitioning(false);
         }
     };
@@ -225,9 +231,9 @@ const KioskFlow = () => {
                             {t('closed_message') || 'En este momento nuestra cocina no admite más pedidos. ¡Disculpa las molestias y vuelve pronto!'}
                         </p>
 
-                        {/* Admin Bypass Button */}
-                        <button 
-                            onClick={() => navigate('/admin')}
+                        {/* Admin Bypass Button — goes to /login to force re-authentication */}
+                        <button
+                            onClick={() => navigate('/login')}
                             className="mt-12 text-[#2C1A0F]/30 hover:text-[#c28744] transition-colors text-sm font-bold uppercase tracking-widest flex items-center gap-2"
                         >
                             <Settings size={16} />
@@ -242,10 +248,89 @@ const KioskFlow = () => {
                 <ScreenSaver onDismiss={handleScreensaverDismiss} />
             )}
 
+            {/* ── Selección de mesa (acceso directo sin QR) ────────── */}
+            {step === 'table_select' && (
+                <div
+                    className="h-screen w-full relative overflow-hidden bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center"
+                    style={{ backgroundImage: `url(${saver})` }}
+                >
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-sm" />
+
+                    {/* Language Switcher */}
+                    <div className="absolute top-8 right-8 z-20">
+                        <LanguageSwitcher />
+                    </div>
+
+                    <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-xs px-4 animate-fade-in-up">
+                        {/* Logo */}
+                        <img src={logo} alt="Logo" className="w-48 max-h-[12vh] object-contain drop-shadow-xl" />
+
+                        {/* Título */}
+                        <div className="text-center">
+                            <p className="text-2xl font-black text-[#2C1A0F] uppercase tracking-wide">
+                                {t('enter_table_number') || '¿En qué mesa estás?'}
+                            </p>
+                        </div>
+
+                        {/* Display del número introducido */}
+                        <div className="w-full bg-white border-2 border-[#c28744]/40 rounded-2xl px-6 py-4 text-center shadow-inner">
+                            <span className={`text-5xl font-black tracking-widest ${tableInput ? 'text-[#2C1A0F]' : 'text-[#c28744]/30'}`}>
+                                {tableInput || '—'}
+                            </span>
+                        </div>
+
+                        {/* Numpad */}
+                        <div className="grid grid-cols-3 gap-3 w-full">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                                <button
+                                    key={n}
+                                    onClick={() => setTableInput(prev => prev.length < 3 ? prev + n : prev)}
+                                    className="bg-white border-2 border-[#c28744]/20 rounded-2xl py-4 text-2xl font-black text-[#2C1A0F] shadow-sm active:scale-95 transition-all hover:border-[#c28744] hover:bg-[#FFF8E7]"
+                                >
+                                    {n}
+                                </button>
+                            ))}
+                            {/* Borrar */}
+                            <button
+                                onClick={() => setTableInput(prev => prev.slice(0, -1))}
+                                className="bg-white border-2 border-[#c28744]/20 rounded-2xl py-4 text-xl font-black text-[#5A4033] shadow-sm active:scale-95 transition-all hover:border-red-300 hover:bg-red-50"
+                            >
+                                ⌫
+                            </button>
+                            {/* 0 */}
+                            <button
+                                onClick={() => setTableInput(prev => prev.length < 3 ? prev + '0' : prev)}
+                                className="bg-white border-2 border-[#c28744]/20 rounded-2xl py-4 text-2xl font-black text-[#2C1A0F] shadow-sm active:scale-95 transition-all hover:border-[#c28744] hover:bg-[#FFF8E7]"
+                            >
+                                0
+                            </button>
+                            {/* Confirmar */}
+                            <button
+                                onClick={() => {
+                                    if (!tableInput) return;
+                                    setTableNumber(tableInput);
+                                    setTableInput('');
+                                    setStep('welcome');
+                                }}
+                                disabled={!tableInput}
+                                className="bg-[#2C1A0F] border-2 border-[#c28744]/30 rounded-2xl py-4 text-xl font-black text-[#c28744] shadow-lg active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#3E2515]"
+                            >
+                                ✓
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ── Welcome ─────────────────────────────────────────── */}
             {step === 'welcome' && (
                 <div
-                    onClick={() => changeStep('menu')}
+                    onClick={() => {
+                        if (orderType === 'take-out' && orderNumber === null) {
+                            setOrderNumber(peekNextOrderNumber());
+                        }
+                        changeStep('menu');
+                    }}
                     className="h-screen w-full relative cursor-pointer group overflow-hidden bg-cover bg-center bg-no-repeat flex flex-col"
                     style={{ backgroundImage: `url(${saver})` }}
                 >
@@ -311,14 +396,21 @@ const KioskFlow = () => {
 
 
             {step === 'payment' && (
-                <PaymentScreen
-                    total={cartTotal}
-                    cart={cart}
-                    orderNumber={orderType === 'eat-in' ? tableNumber : orderNumber}
-                    orderType={orderType}
-                    onPaymentSuccess={handlePaymentSuccess}
-                    onCancel={handlePaymentCancel}
-                />
+                <>
+                    {saveOrderError && (
+                        <div className="fixed top-0 left-0 right-0 z-[9998] bg-red-600 text-white text-center py-4 px-6 font-bold text-lg shadow-xl">
+                            ⚠️ Tu pago fue procesado pero ocurrió un error al registrar el pedido. Por favor, avisa al personal.
+                        </div>
+                    )}
+                    <PaymentScreen
+                        total={cartTotal}
+                        cart={cart}
+                        orderNumber={orderType === 'eat-in' ? tableNumber : orderNumber}
+                        orderType={orderType}
+                        onPaymentSuccess={handlePaymentSuccess}
+                        onCancel={handlePaymentCancel}
+                    />
+                </>
             )}
 
             {step === 'menu' && (
@@ -343,7 +435,7 @@ const KioskFlow = () => {
                                             title={t('order')}
                                         >
                                             <span className="text-[#2C1A0F] font-bold text-sm sm:text-lg">
-                                                {t('order') || 'Pedido'} #{orderNumber}
+                                                {t('order') || 'Pedido'} #{orderNumber ?? '---'}
                                             </span>
                                         </div>
                                     )}

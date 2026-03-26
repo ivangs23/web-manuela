@@ -6,6 +6,9 @@ const BUCKET = 'screensaver-media';
 const IMAGE_DURATION = 5000;
 const ORDER_KEY = 'screensaver_order';
 
+// Module-level cache: url -> blob URL. Persists for the lifetime of the app.
+const videoBlobCache = new Map();
+
 // Detect MIME type from file extension
 const getMimeType = (url) => {
     const ext = url.split('?')[0].split('.').pop().toLowerCase();
@@ -58,26 +61,7 @@ const ScreenSaver = ({ onDismiss }) => {
         load();
     }, []);
 
-    // ── Advance slide ──────────────────────────────────────────────────
-    const advance = useCallback(() => {
-        clearTimeout(timerRef.current);
-        setVisible(false);
-        setTimeout(() => {
-            setIndex(prev => {
-                // We need the latest media.length — use the functional updater chain
-                setMedia(m => {
-                    const next = (prev + 1) % (m.length || 1);
-                    // schedule setIndex via timeout to avoid setState-in-setState warning
-                    setTimeout(() => setIndex(next), 0);
-                    return m;
-                });
-                return prev; // interim value, overwritten above
-            });
-            setVisible(true);
-        }, 350);
-    }, []);
-
-    // ── Cleaner advance using ref-stored media length ──────────────────
+    // ── Advance using ref-stored media length ─────────────────────────
     const mediaLenRef = useRef(0);
     useEffect(() => { mediaLenRef.current = media.length; }, [media]);
 
@@ -114,12 +98,17 @@ const ScreenSaver = ({ onDismiss }) => {
     // ── Fetch video as blob for reliable MIME + local playback ─────────
     useEffect(() => {
         if (!current?.isVideo) {
-            setBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
+            setBlobUrl(null);
+            return;
+        }
+
+        // Serve from cache immediately if already fetched
+        if (videoBlobCache.has(current.url)) {
+            setBlobUrl(videoBlobCache.get(current.url));
             return;
         }
 
         let cancelled = false;
-        let objectUrl = null;
 
         const fetchBlob = async () => {
             try {
@@ -130,7 +119,8 @@ const ScreenSaver = ({ onDismiss }) => {
                 const mimeType = getMimeType(current.url);
                 // Ensure correct MIME type (some servers return octet-stream)
                 const typedBlob = blob.type.startsWith('video/') ? blob : new Blob([blob], { type: mimeType });
-                objectUrl = URL.createObjectURL(typedBlob);
+                const objectUrl = URL.createObjectURL(typedBlob);
+                videoBlobCache.set(current.url, objectUrl); // Store in cache for reuse
                 setBlobUrl(objectUrl);
             } catch (err) {
                 console.warn('[Screensaver] blob fetch failed:', err.message);
@@ -141,10 +131,7 @@ const ScreenSaver = ({ onDismiss }) => {
         };
 
         fetchBlob();
-        return () => {
-            cancelled = true;
-            if (objectUrl) URL.revokeObjectURL(objectUrl);
-        };
+        return () => { cancelled = true; };
     }, [current?.url, advanceSafe]);
 
     // ── Video ref callback: play as soon as element mounts / src is set ─

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
 import { useProducts, getLocalizedName, getLocalizedDesc, getLocalizedAllergenLabel } from '../context/ProductContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,6 +7,15 @@ const ProductDetail = ({ product, onClose, onAddToCart, initialModifiers = [] })
     const { allergens } = useProducts();
     const { t, language } = useLanguage();
     const [selectedModifiers, setSelectedModifiers] = useState(initialModifiers);
+
+    // Cerrar con ESC
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
 
     const toggleModifier = (mod) => {
         setSelectedModifiers(prev => {
@@ -22,9 +31,15 @@ const ProductDetail = ({ product, onClose, onAddToCart, initialModifiers = [] })
     const totalPrice = product.price + selectedModifiers.reduce((sum, m) => sum + m.price, 0);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+            onClick={onClose}
+        >
             {/* Fondo Modal Blanco */}
-            <div className="bg-[#FFF8E7] w-full max-w-6xl h-[90vh] max-h-[850px] rounded-3xl overflow-hidden flex shadow-2xl border border-[#c28744]/20">
+            <div
+                className="bg-[#FFF8E7] w-full max-w-6xl h-[90vh] max-h-[850px] rounded-3xl overflow-hidden flex shadow-2xl border border-[#c28744]/20"
+                onClick={(e) => e.stopPropagation()}
+            >
 
                 {/* Columna Izquierda: Imagen */}
                 <div className="w-1/2 relative hidden lg:block bg-[#12100B]">

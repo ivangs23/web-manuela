@@ -15,38 +15,39 @@ const PaymentScreen = ({ total, cart, orderNumber, orderType, onPaymentSuccess, 
     const [clientSecret, setClientSecret] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
 
-    useEffect(() => {
-        const initializePayment = async () => {
-            try {
-                setStatus('initializing');
+    const initializePayment = React.useCallback(async () => {
+        try {
+            setStatus('initializing');
+            setErrorMessage('');
 
-                const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-                    body: {
-                        amount: total,
-                        currency: 'eur',
-                        orderDetails: {
-                            orderNumber,
-                            orderType
-                        }
+            const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+                body: {
+                    amount: total,
+                    currency: 'eur',
+                    orderDetails: {
+                        orderNumber,
+                        orderType
                     }
-                });
+                }
+            });
 
-                if (error) throw error;
-                if (data.error) throw new Error(data.error);
+            if (error) throw error;
+            if (data.error) throw new Error(data.error);
 
-                setClientSecret(data.clientSecret);
-                setStatus('ready');
-            } catch (err) {
-                console.error("Error creating payment intent:", err);
-                setStatus('error');
-                setErrorMessage(err.message || 'Error al iniciar el pago');
-            }
-        };
+            setClientSecret(data.clientSecret);
+            setStatus('ready');
+        } catch (err) {
+            console.error("Error creating payment intent:", err);
+            setStatus('error');
+            setErrorMessage(err.message || 'Error al iniciar el pago');
+        }
+    }, [total, orderNumber, orderType]);
 
+    useEffect(() => {
         if (total > 0) {
             initializePayment();
         }
-    }, [total, orderNumber, orderType]);
+    }, [initializePayment]);
 
     const appearance = {
         theme: 'stripe',
@@ -79,7 +80,7 @@ const PaymentScreen = ({ total, cart, orderNumber, orderType, onPaymentSuccess, 
                 <div className="text-center mb-8">
                     <h2 className="text-4xl font-black text-[#2C1A0F] mb-1">{parseFloat(total || 0).toFixed(2)}€</h2>
                     <p className="text-gray-500 font-medium">
-                        {t('order') || 'Pedido'} #{orderNumber}
+                        {t('order') || 'Pedido'} #{orderNumber ?? '---'}
                     </p>
                 </div>
 
@@ -120,7 +121,7 @@ const PaymentScreen = ({ total, cart, orderNumber, orderType, onPaymentSuccess, 
                         </h3>
                         <p className="text-gray-500 text-sm">{errorMessage}</p>
                         <button
-                            onClick={() => window.location.reload()}
+                            onClick={initializePayment}
                             className="mt-4 px-6 py-2 bg-[#2C1A0F] text-white rounded-xl font-bold"
                         >
                             {t('retry') || 'Reintentar'}

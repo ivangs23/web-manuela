@@ -4,6 +4,16 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 
+const getIpc = () => {
+    try {
+        if (window.require) {
+            const { ipcRenderer } = window.require('electron');
+            return ipcRenderer;
+        }
+    } catch (_) {}
+    return null;
+};
+
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

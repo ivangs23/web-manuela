@@ -121,7 +121,6 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateItem, t
                             onClose={() => setEditingItem(null)}
                             onAddToCart={(product, modifiers) => handleSaveEdit(product, modifiers)}
                             initialModifiers={editingItem.selectedModifiers}
-                            isEditing={true}
                         />
                     </div>
                 </div>

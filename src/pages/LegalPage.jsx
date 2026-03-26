@@ -31,8 +31,8 @@ const LegalPage = () => {
     return (
         <div className="min-h-screen bg-[#F9F7F2] text-[#2C1A0F] font-sans selection:bg-[#c28744]/30">
             <header className="bg-white border-b border-[#2C1A0F]/10 px-6 py-4 sticky top-0 z-10 flex items-center gap-4">
-                <button 
-                    onClick={() => navigate(-1)}
+                <button
+                    onClick={() => navigate('/')}
                     className="p-2 hover:bg-[#F9F7F2] rounded-full transition-colors"
                 >
                     <ArrowLeft size={24} />

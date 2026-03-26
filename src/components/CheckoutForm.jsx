@@ -34,7 +34,7 @@ const CheckoutForm = ({ onPaymentSuccess, onCancel, total }) => {
             if (error.type === "card_error" || error.type === "validation_error") {
                 setMessage(error.message);
             } else {
-                setMessage("An unexpected error occurred.");
+                setMessage(t('payment_unexpected_error') || 'Ha ocurrido un error inesperado. Inténtalo de nuevo.');
             }
         } else if (paymentIntent && paymentIntent.status === 'succeeded') {
             onPaymentSuccess();

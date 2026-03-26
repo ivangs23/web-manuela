@@ -20,7 +20,26 @@ const MenuPage = ({ onAddToCart, openCart }) => {
         setActiveCategory(catId);
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">{t('loading')}</div>;
+    if (loading) return (
+        <div className="h-full w-full bg-[#F9F7F2] p-4">
+            <div className="flex flex-col h-full rounded-t-2xl border border-[#c28744]/10 bg-white overflow-hidden">
+                {/* Header skeleton */}
+                <div className="p-4 md:p-6 border-b border-[#2C1A0F]/5 flex justify-between items-center">
+                    <div className="h-8 w-32 bg-[#c28744]/10 rounded-full animate-pulse" />
+                    <div className="h-8 w-28 bg-[#c28744]/10 rounded-full animate-pulse" />
+                </div>
+                {/* Grid skeleton */}
+                <div className="flex-1 p-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="rounded-2xl border-2 border-[#c28744]/10 bg-[#FFF8E7] h-40 md:h-64 flex flex-col items-center justify-center gap-4 p-4 animate-pulse">
+                            <div className="w-16 h-16 md:w-28 md:h-28 rounded-full bg-[#c28744]/10" />
+                            <div className="h-4 w-20 bg-[#c28744]/10 rounded-full" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 
     const currentCategoryName = categories.find(c => c.id === activeCategory)
         ? getLocalizedName(categories.find(c => c.id === activeCategory), language)

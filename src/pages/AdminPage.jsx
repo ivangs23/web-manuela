@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useProducts } from '../context/ProductContext';
-import { Plus, Edit2, Trash2, ArrowLeft, LogOut, Package, Grid, AlertCircle, Printer, Settings, FlaskConical, Wifi, MonitorPlay, ArrowUpDown, ChevronDown, Star } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowLeft, Package, Grid, AlertCircle, Settings, MonitorPlay, ArrowUpDown, ChevronDown, Star, BookLock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import AdminProductForm from '../components/AdminProductForm';
@@ -9,6 +9,7 @@ import AdminAllergenManager from '../components/AdminAllergenManager';
 import AdminMediaManager from '../components/AdminMediaManager';
 import AdminProductOrder from '../components/AdminProductOrder';
 import AdminTopSellers from '../components/AdminTopSellers';
+import AdminDailySummary from '../components/AdminDailySummary';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { getLocalizedName } from '../context/ProductContext';
@@ -18,6 +19,7 @@ import { getLocalizedName } from '../context/ProductContext';
 const AdminPage = () => {
     const { products, categories, deleteProduct } = useProducts();
     const { t, language } = useLanguage();
+    const navigate = useNavigate();
     const [editingProduct, setEditingProduct] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [activeCategory, setActiveCategory] = useState('all');
@@ -60,6 +62,10 @@ const AdminPage = () => {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
+        localStorage.removeItem('screensaver_timeout');
+        localStorage.removeItem('kiosk_order_date');
+        localStorage.removeItem('kiosk_order_count');
+        localStorage.removeItem('admin_expanded_categories');
         navigate('/');
     };
 
@@ -69,10 +75,18 @@ const AdminPage = () => {
         }
     };
 
-    const [expandedCategories, setExpandedCategories] = useState({});
+    const [expandedCategories, setExpandedCategories] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('admin_expanded_categories') || '{}');
+        } catch (_) { return {}; }
+    });
 
     const toggleCategoryExpand = (id) => {
-        setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
+        setExpandedCategories(prev => {
+            const next = { ...prev, [id]: !prev[id] };
+            localStorage.setItem('admin_expanded_categories', JSON.stringify(next));
+            return next;
+        });
     };
 
     const categoryIds = React.useMemo(() => {
@@ -133,6 +147,7 @@ const AdminPage = () => {
                         { id: 'allergens', icon: <AlertCircle size={15} />, label: t('tab_allergens') },
                         { id: 'settings', icon: <Settings size={15} />, label: t('tab_settings') },
                         { id: 'screensaver', icon: <MonitorPlay size={15} />, label: 'Screensaver' },
+                        { id: 'cierre-dia', icon: <BookLock size={15} />, label: 'Cierre de Día' },
                     ].map(({ id, icon, label }) => (
                         <button
                             key={id}
@@ -293,6 +308,12 @@ const AdminPage = () => {
                 {activeTab === 'screensaver' && (
                     <div className="max-w-4xl mx-auto w-full">
                         <AdminMediaManager />
+                    </div>
+                )}
+
+                {activeTab === 'cierre-dia' && (
+                    <div className="flex-1 overflow-y-auto">
+                        <AdminDailySummary />
                     </div>
                 )}
 

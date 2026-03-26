@@ -3,8 +3,6 @@ export const PREDEFINED_TRANSLATIONS = {
         // General
         loading: "Cargando...",
         error: "Error",
-        kiosk_title: "Manuela Desayuna",
-        kiosk_subtitle: "Tocar para empezar",
         good_morning: "Buenos\nDías",
         touch_to_start: "Toca para empezar",
 
@@ -50,6 +48,7 @@ export const PREDEFINED_TRANSLATIONS = {
         payment_waiting_card: "Acerque su tarjeta",
         payment_processing: "Procesando operación...",
         payment_success: "Pago completado",
+        payment_unexpected_error: "Ha ocurrido un error inesperado. Inténtalo de nuevo.",
         payment_error: "Error en el pago",
         payment_cancelled: "Pago cancelado",
         payment_follow_instructions: "Siga las instrucciones del terminal",
@@ -77,7 +76,6 @@ export const PREDEFINED_TRANSLATIONS = {
         tab_products: "Productos",
         tab_categories: "Categorías",
         tab_allergens: "Alérgenos",
-        tab_printers: "Impresoras",
         tab_settings: "Ajustes",
 
         // Admin Actions
@@ -104,13 +102,6 @@ export const PREDEFINED_TRANSLATIONS = {
 
         // Settings
         settings_title: "Ajustes del Sistema",
-        tpv_mode_title: "Modo TPV",
-        tpv_mode_simulation_desc: "Simulación activa — los cobros NO son reales. Ideal para pruebas.",
-        tpv_mode_production_desc: "Producción activa — los cobros se procesan con el terminal real.",
-        tpv_mode_simulation_label: "SIMULACIÓN",
-        tpv_mode_production_label: "PRODUCCIÓN",
-        tpv_mode_simulation_detail: "— El pago se aprueba automáticamente sin cobrar nada",
-        tpv_mode_production_detail: "— Se conecta con el terminal PAX A35 real",
         settings_restart_warning: "⚠️ Recuerda reiniciar la aplicación si cambias el modo para garantizar que todos los procesos se sincronicen correctamente.",
 
         // ProductCard / ProductDetail
@@ -122,18 +113,12 @@ export const PREDEFINED_TRANSLATIONS = {
         allergy_warning: "Si tienes alguna alergia severa no listada, por favor contacta con el personal antes de pedir.",
         total_price: "Precio Total",
 
-        // Languages
-        lang_es: "Español",
-        lang_en: "English",
-        lang_pt: "Português"
     },
 
     en: {
         // General
         loading: "Loading...",
         error: "Error",
-        kiosk_title: "Manuela Desayuna",
-        kiosk_subtitle: "Touch to start",
         good_morning: "Good\nMorning",
         touch_to_start: "Touch to start",
 
@@ -179,6 +164,7 @@ export const PREDEFINED_TRANSLATIONS = {
         payment_waiting_card: "Tap your card",
         payment_processing: "Processing...",
         payment_success: "Payment completed",
+        payment_unexpected_error: "An unexpected error occurred. Please try again.",
         payment_error: "Payment error",
         payment_cancelled: "Payment cancelled",
         payment_follow_instructions: "Follow the instructions on the terminal",
@@ -206,7 +192,6 @@ export const PREDEFINED_TRANSLATIONS = {
         tab_products: "Products",
         tab_categories: "Categories",
         tab_allergens: "Allergens",
-        tab_printers: "Printers",
         tab_settings: "Settings",
 
         // Admin Actions
@@ -233,13 +218,6 @@ export const PREDEFINED_TRANSLATIONS = {
 
         // Settings
         settings_title: "System Settings",
-        tpv_mode_title: "TPV Mode",
-        tpv_mode_simulation_desc: "Simulation active — charges are NOT real. Ideal for testing.",
-        tpv_mode_production_desc: "Production active — charges are processed on the real terminal.",
-        tpv_mode_simulation_label: "SIMULATION",
-        tpv_mode_production_label: "PRODUCTION",
-        tpv_mode_simulation_detail: "— Payment is approved automatically without any charge",
-        tpv_mode_production_detail: "— Connects to the real PAX A35 terminal",
         settings_restart_warning: "⚠️ Remember to restart the app after changing the mode to ensure all processes synchronize correctly.",
 
         // ProductCard / ProductDetail
@@ -251,18 +229,12 @@ export const PREDEFINED_TRANSLATIONS = {
         allergy_warning: "If you have a severe allergy not listed, please contact staff before ordering.",
         total_price: "Total Price",
 
-        // Languages
-        lang_es: "Spanish",
-        lang_en: "English",
-        lang_pt: "Portuguese"
     },
 
     pt: {
         // General
         loading: "Carregando...",
         error: "Erro",
-        kiosk_title: "Manuela Desayuna",
-        kiosk_subtitle: "Toque para iniciar",
         good_morning: "Bom\nDia",
         touch_to_start: "Toque para iniciar",
 
@@ -308,6 +280,7 @@ export const PREDEFINED_TRANSLATIONS = {
         payment_waiting_card: "Aproxime o seu cartão",
         payment_processing: "Processando...",
         payment_success: "Pagamento concluído",
+        payment_unexpected_error: "Ocorreu um erro inesperado. Por favor tente novamente.",
         payment_error: "Erro no pagamento",
         payment_cancelled: "Pagamento cancelado",
         payment_follow_instructions: "Siga as instruções no terminal",
@@ -335,7 +308,6 @@ export const PREDEFINED_TRANSLATIONS = {
         tab_products: "Produtos",
         tab_categories: "Categorias",
         tab_allergens: "Alérgenos",
-        tab_printers: "Impressoras",
         tab_settings: "Configurações",
 
         // Admin Actions
@@ -362,13 +334,6 @@ export const PREDEFINED_TRANSLATIONS = {
 
         // Settings
         settings_title: "Configurações do Sistema",
-        tpv_mode_title: "Modo TPV",
-        tpv_mode_simulation_desc: "Simulação ativa — cobranças NÃO são reais. Ideal para testes.",
-        tpv_mode_production_desc: "Produção ativa — cobranças processadas no terminal real.",
-        tpv_mode_simulation_label: "SIMULAÇÃO",
-        tpv_mode_production_label: "PRODUÇÃO",
-        tpv_mode_simulation_detail: "— O pagamento é aprovado automaticamente sem cobrar nada",
-        tpv_mode_production_detail: "— Conecta ao terminal PAX A35 real",
         settings_restart_warning: "⚠️ Lembre-se de reiniciar o aplicativo ao mudar o modo para garantir a sincronização correta.",
 
         // ProductCard / ProductDetail
@@ -380,9 +345,5 @@ export const PREDEFINED_TRANSLATIONS = {
         allergy_warning: "Se tiver uma alergia grave não listada, por favor contacte o pessoal antes de pedir.",
         total_price: "Preço Total",
 
-        // Languages
-        lang_es: "Espanhol",
-        lang_en: "Inglês",
-        lang_pt: "Português"
     }
 };
