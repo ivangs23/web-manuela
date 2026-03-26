@@ -15,7 +15,7 @@ export const LanguageProvider = ({ children }) => {
     const [language, setLanguage] = useState('es'); // Default language
 
     const t = (key) => {
-        const translation = PREDEFINED_TRANSLATIONS[language][key];
+        const translation = PREDEFINED_TRANSLATIONS[language]?.[key];
         return translation || key; // Fallback to key if not found
     };
 

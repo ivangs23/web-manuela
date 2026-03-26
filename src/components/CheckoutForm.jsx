@@ -65,10 +65,10 @@ const CheckoutForm = ({ onPaymentSuccess, onCancel, total }) => {
                     {isLoading ? (
                         <>
                             <Loader2 className="animate-spin" size={20} />
-                            {t('processing') || 'Procesando...'}
+                            {t('payment_processing') || 'Procesando...'}
                         </>
                     ) : (
-                        `${t('pay_now') === 'pay_now' ? 'Pagar ahora' : t('pay_now')} ${parseFloat(total).toFixed(2)}€`
+                        `${t('pay') || 'Pagar'} ${parseFloat(total).toFixed(2)}€`
                     )}
                 </button>
 
