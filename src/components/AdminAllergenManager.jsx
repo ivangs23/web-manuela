@@ -24,7 +24,7 @@ const IconSelector = ({ value, onChange }) => (
             ))}
         </select>
         <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-            <ChevronDown size={14} />
+            <ChevronDown size={13} />
         </div>
         <div className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-600">
             {getIcon(value)}
