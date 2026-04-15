@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useProducts } from '../context/ProductContext';
-import { Plus, Edit2, Trash2, ArrowLeft, Package, Grid, AlertCircle, Settings, MonitorPlay, ArrowUpDown, ChevronDown, Star, BookLock } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowLeft, Package, Grid, AlertCircle, Settings, MonitorPlay, ArrowUpDown, ChevronDown, Star, BookLock, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import AdminProductForm from '../components/AdminProductForm';
@@ -10,6 +10,7 @@ import AdminMediaManager from '../components/AdminMediaManager';
 import AdminProductOrder from '../components/AdminProductOrder';
 import AdminTopSellers from '../components/AdminTopSellers';
 import AdminDailySummary from '../components/AdminDailySummary';
+import AdminPrinterManager from '../components/AdminPrinterManager';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { getLocalizedName } from '../context/ProductContext';
@@ -147,6 +148,7 @@ const AdminPage = () => {
                         { id: 'allergens', icon: <AlertCircle size={15} />, label: t('tab_allergens') },
                         { id: 'settings', icon: <Settings size={15} />, label: t('tab_settings') },
                         { id: 'screensaver', icon: <MonitorPlay size={15} />, label: 'Screensaver' },
+                        { id: 'printers', icon: <Printer size={15} />, label: 'Impresoras' },
                         { id: 'cierre-dia', icon: <BookLock size={15} />, label: 'Cierre de Día' },
                     ].map(({ id, icon, label }) => (
                         <button
@@ -308,6 +310,12 @@ const AdminPage = () => {
                 {activeTab === 'screensaver' && (
                     <div className="max-w-4xl mx-auto w-full">
                         <AdminMediaManager />
+                    </div>
+                )}
+
+                {activeTab === 'printers' && (
+                    <div className="flex-1 overflow-y-auto">
+                        <AdminPrinterManager />
                     </div>
                 )}
 

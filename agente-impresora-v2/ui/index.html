@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuela Desayuna - Agente de Impresora</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #12100B;
+            --surface: #1E150A;
+            --border: rgba(194, 135, 68, 0.2);
+            --gold: #c28744;
+            --gold-soft: rgba(194, 135, 68, 0.1);
+            --text: #FFF8E7;
+            --text-muted: #9A7B6A;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ─── Header ──────────────────────────────────── */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            -webkit-app-region: drag;
+        }
+
+        .header h1 {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .status-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            -webkit-app-region: no-drag;
+        }
+        .status-badge.connected { background: rgba(74, 222, 128, 0.15); color: var(--success); }
+        .status-badge.disconnected { background: rgba(248, 113, 113, 0.15); color: var(--error); }
+        .status-badge.connecting { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
+
+        /* ─── Main layout ─────────────────────────────── */
+        .main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ─── Sidebar (config) ────────────────────────── */
+        .sidebar {
+            width: 300px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-section h3 {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
+        .input-group input {
+            width: 100%;
+            padding: 8px 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 13px;
+            outline: none;
+        }
+        .input-group input:focus { border-color: var(--gold); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--gold); color: var(--bg); }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-secondary { background: var(--gold-soft); color: var(--gold); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: rgba(194, 135, 68, 0.2); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ─── Printer cards ───────────────────────────── */
+        .printer-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+        .printer-card .printer-name { font-weight: 700; font-size: 13px; }
+        .printer-card .printer-detail { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .printer-card .printer-badge {
+            font-size: 9px; font-weight: 700;
+            padding: 2px 8px; border-radius: 10px;
+            background: var(--gold-soft); color: var(--gold);
+        }
+
+        /* ─── Log panel ───────────────────────────────── */
+        .log-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .log-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .log-header h2 { font-size: 13px; font-weight: 700; color: var(--gold); }
+
+        .log-stats { display: flex; gap: 16px; }
+        .log-stat { font-size: 20px; font-weight: 800; }
+        .log-stat small { font-size: 10px; color: var(--text-muted); display: block; font-weight: 600; }
+
+        .log-entries {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 20px;
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .log-entry { display: flex; gap: 8px; padding: 2px 0; }
+        .log-entry .time { color: var(--text-muted); white-space: nowrap; }
+        .log-entry .msg { flex: 1; word-break: break-word; }
+        .log-entry.success .msg { color: var(--success); }
+        .log-entry.error .msg { color: var(--error); }
+        .log-entry.warning .msg { color: var(--warning); }
+        .log-entry.order .msg { color: #60a5fa; }
+
+        /* ─── Setup screen ────────────────────────────── */
+        .setup-screen {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .setup-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            width: 400px;
+            text-align: center;
+        }
+
+        .setup-card h2 { color: var(--gold); font-size: 20px; margin-bottom: 8px; }
+        .setup-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <!-- Estado: Setup (sin conexión) -->
+    <div id="setup-view">
+        <div class="header">
+            <h1>Manuela Desayuna — Agente de Impresora</h1>
+            <span class="status-badge disconnected">Desconectado</span>
+        </div>
+        <div class="setup-screen">
+            <div class="setup-card">
+                <h2>Configurar Conexión</h2>
+                <p>Introduce los datos de tu proyecto Supabase para conectar el agente.</p>
+                <div class="input-group">
+                    <label>Supabase URL</label>
+                    <input type="text" id="input-url" placeholder="https://xxxxx.supabase.co" />
+                </div>
+                <div class="input-group">
+                    <label>Supabase Anon Key</label>
+                    <input type="text" id="input-key" placeholder="eyJhbGci..." />
+                </div>
+                <br>
+                <button class="btn btn-primary" id="btn-connect" style="width: 100%; justify-content: center;">
+                    Conectar
+                </button>
+                <p id="setup-error" style="color: var(--error); margin-top: 12px; font-size: 12px; display: none;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado: Conectado -->
+    <div id="connected-view" style="display: none; flex-direction: column; height: 100vh;">
+        <div class="header">
+            <h1>Manuela Desayuna — Agente de Impresora</h1>
+            <div style="display: flex; align-items: center; gap: 10px; -webkit-app-region: no-drag;">
+                <button class="btn btn-secondary" id="btn-reload" title="Recargar configuración">Recargar Config</button>
+                <span class="status-badge connected" id="status-badge">Conectado</span>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Impresoras</h3>
+                    <div id="printer-list">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Categorías Asignadas</h3>
+                    <div id="category-summary" style="font-size: 12px; color: var(--text-muted);">
+                        Cargando...
+                    </div>
+                </div>
+            </div>
+
+            <div class="log-panel">
+                <div class="log-header">
+                    <h2>Actividad</h2>
+                    <div class="log-stats">
+                        <div class="log-stat" style="color: var(--success);">
+                            <span id="stat-ok">0</span>
+                            <small>Enviados</small>
+                        </div>
+                        <div class="log-stat" style="color: var(--error);">
+                            <span id="stat-err">0</span>
+                            <small>Errores</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="log-entries" id="log-entries">
+                    <div class="log-entry"><span class="msg" style="color: var(--text-muted);">Esperando conexión...</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── Estado ──────────────────────────────────────────────────
+        let statsOk = 0;
+        let statsErr = 0;
+        let config = null; // { printers, categoryMap, categories }
+
+        // ─── Elementos DOM ───────────────────────────────────────────
+        const setupView = document.getElementById('setup-view');
+        const connectedView = document.getElementById('connected-view');
+        const inputUrl = document.getElementById('input-url');
+        const inputKey = document.getElementById('input-key');
+        const btnConnect = document.getElementById('btn-connect');
+        const btnReload = document.getElementById('btn-reload');
+        const setupError = document.getElementById('setup-error');
+        const logEntries = document.getElementById('log-entries');
+        const printerList = document.getElementById('printer-list');
+        const categorySummary = document.getElementById('category-summary');
+        const statOk = document.getElementById('stat-ok');
+        const statErr = document.getElementById('stat-err');
+
+        // ─── Cargar credenciales guardadas ────────────────────────────
+        const savedUrl = localStorage.getItem('supabase_url') || '';
+        const savedKey = localStorage.getItem('supabase_key') || '';
+        inputUrl.value = savedUrl;
+        inputKey.value = savedKey;
+
+        // ─── Conectar ────────────────────────────────────────────────
+        btnConnect.addEventListener('click', async () => {
+            const url = inputUrl.value.trim();
+            const key = inputKey.value.trim();
+            if (!url || !key) { showError('Rellena ambos campos'); return; }
+
+            btnConnect.disabled = true;
+            btnConnect.textContent = 'Conectando...';
+            setupError.style.display = 'none';
+
+            const result = await window.api.initServices({ supabaseUrl: url, supabaseKey: key });
+
+            if (result.success) {
+                localStorage.setItem('supabase_url', url);
+                localStorage.setItem('supabase_key', key);
+                setupView.style.display = 'none';
+                connectedView.style.display = 'flex';
+            } else {
+                showError(result.error || 'Error de conexión');
+                btnConnect.disabled = false;
+                btnConnect.textContent = 'Conectar';
+            }
+        });
+
+        // Auto-conectar si hay credenciales guardadas
+        if (savedUrl && savedKey) {
+            btnConnect.click();
+        }
+
+        btnReload.addEventListener('click', () => window.api.reloadConfig());
+
+        function showError(msg) {
+            setupError.textContent = msg;
+            setupError.style.display = 'block';
+        }
+
+        // ─── Listeners del proceso principal ─────────────────────────
+        window.api.onLog((entry) => {
+            addLogEntry(entry);
+        });
+
+        window.api.onConfigLoaded((data) => {
+            config = data;
+            renderPrinters(data.printers);
+            renderCategorySummary(data.printers, data.categoryMap, data.categories);
+        });
+
+        window.api.onOrderResult(({ pedido, result }) => {
+            if (result.success) {
+                statsOk++;
+                statOk.textContent = statsOk;
+            } else {
+                statsErr++;
+                statErr.textContent = statsErr;
+            }
+        });
+
+        // ─── Render functions ────────────────────────────────────────
+        function addLogEntry({ timestamp, message, type }) {
+            const div = document.createElement('div');
+            div.className = `log-entry ${type || ''}`;
+            div.innerHTML = `<span class="time">[${timestamp}]</span><span class="msg">${escapeHtml(message)}</span>`;
+            logEntries.appendChild(div);
+            logEntries.scrollTop = logEntries.scrollHeight;
+
+            // Limitar a 500 entradas
+            while (logEntries.children.length > 500) {
+                logEntries.removeChild(logEntries.firstChild);
+            }
+        }
+
+        function renderPrinters(printers) {
+            printerList.innerHTML = '';
+            if (printers.length === 0) {
+                printerList.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">Sin impresoras configuradas. Añádelas desde el panel admin de la web.</p>';
+                return;
+            }
+            printers.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'printer-card';
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="printer-name">${escapeHtml(p.name)}</span>
+                        ${p.is_default ? '<span class="printer-badge">DEFAULT</span>' : ''}
+                    </div>
+                    <div class="printer-detail">${escapeHtml(p.ip)}:${p.port} · ${p.type}</div>
+                `;
+                printerList.appendChild(card);
+            });
+        }
+
+        function renderCategorySummary(printers, categoryMap, categories) {
+            if (!printers.length) {
+                categorySummary.innerHTML = '<p>Sin impresoras.</p>';
+                return;
+            }
+
+            const printerNames = {};
+            printers.forEach(p => { printerNames[p.id] = p.name; });
+
+            let html = '';
+            printers.forEach(p => {
+                const assignedCats = Object.entries(categoryMap)
+                    .filter(([_, pid]) => pid === p.id)
+                    .map(([catId]) => {
+                        const cat = categories.find(c => c.id === catId);
+                        return cat ? cat.name : catId;
+                    });
+
+                html += `<div style="margin-bottom:8px;">`;
+                html += `<strong style="color:var(--gold);">${escapeHtml(p.name)}</strong>`;
+                if (assignedCats.length > 0) {
+                    html += `<div style="margin-top:2px;">${assignedCats.map(n => `<span style="display:inline-block; background:var(--gold-soft); color:var(--gold); padding:1px 8px; border-radius:10px; font-size:10px; margin:2px 2px 0 0;">${escapeHtml(n)}</span>`).join('')}</div>`;
+                } else {
+                    html += `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Sin categorías asignadas</div>`;
+                }
+                html += `</div>`;
+            });
+
+            categorySummary.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
