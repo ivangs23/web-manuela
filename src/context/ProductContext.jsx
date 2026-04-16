@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { supabase } from '../lib/supabase';
 import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES as STATIC_CATEGORIES, ALLERGENS as STATIC_ALLERGENS } from '../data/products.jsx';
 import { getIcon } from '../utils/iconMap';
+import { loadLocalData, saveLocalData, startSync } from '../services/electronBridge';
 
 const ProductContext = createContext();
 
@@ -68,6 +69,37 @@ export const ProductProvider = ({ children }) => {
 
     const initializationRef = useRef(false);
 
+    // ── Realtime: sincronizar cambios del catálogo en tiempo real ─────────
+    // Cuando el admin modifica un producto o categoría desde Garum/AdminPage,
+    // el kiosko lo refleja sin necesidad de reiniciar.
+    useEffect(() => {
+        if (!supabase) return;
+
+        const channel = supabase
+            .channel('catalog_realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+                if (payload.eventType === 'INSERT') {
+                    setProducts(prev => [...prev, payload.new].sort((a, b) => (a.order_index ?? 9999) - (b.order_index ?? 9999)));
+                } else if (payload.eventType === 'UPDATE') {
+                    setProducts(prev => prev.map(p => p.id === payload.new.id ? { ...p, ...payload.new } : p));
+                } else if (payload.eventType === 'DELETE') {
+                    setProducts(prev => prev.filter(p => p.id !== payload.old.id));
+                }
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, (payload) => {
+                if (payload.eventType === 'INSERT') {
+                    setCategories(prev => [...prev, payload.new].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)));
+                } else if (payload.eventType === 'UPDATE') {
+                    setCategories(prev => prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } : c));
+                } else if (payload.eventType === 'DELETE') {
+                    setCategories(prev => prev.filter(c => c.id !== payload.old.id));
+                }
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, []);
+
     // Initial fetch — Offline-first
     useEffect(() => {
         const fetchData = async () => {
@@ -79,25 +111,20 @@ export const ProductProvider = ({ children }) => {
                 // ── FASE 1: Cargar desde SQLite local al instante ─────────────────
                 // Si hay datos en caché, el UI se muestra en < 10ms sin red.
                 let hasLocalData = false;
-                try {
-                    const { ipcRenderer } = window.require('electron');
-                    const [prodLocal, catLocal, allLocal] = await Promise.all([
-                        ipcRenderer.invoke('DATA:LOAD_LOCAL', { type: 'products' }),
-                        ipcRenderer.invoke('DATA:LOAD_LOCAL', { type: 'categories' }),
-                        ipcRenderer.invoke('DATA:LOAD_LOCAL', { type: 'allergens' }),
-                    ]);
+                const [prodLocal, catLocal, allLocal] = await Promise.all([
+                    loadLocalData('products'),
+                    loadLocalData('categories'),
+                    loadLocalData('allergens'),
+                ]);
 
-                    if (prodLocal.data && prodLocal.data.length > 0) {
-                        setProducts(prodLocal.data);
-                        if (catLocal.data) setCategories(catLocal.data);
-                        if (allLocal.data) processAllergensData(allLocal.data);
-                        setLoading(false); // ← Mostrar UI al instante
-                        setSyncMessage('Actualizando datos...');
-                        setSyncProgress(20);
-                        hasLocalData = true;
-                    }
-                } catch (localErr) {
-                    console.warn('[ProductContext] No se pudo leer caché SQLite:', localErr.message);
+                if (prodLocal.data && prodLocal.data.length > 0) {
+                    setProducts(prodLocal.data);
+                    if (catLocal.data) setCategories(catLocal.data);
+                    if (allLocal.data) processAllergensData(allLocal.data);
+                    setLoading(false); // ← Mostrar UI al instante
+                    setSyncMessage('Actualizando datos...');
+                    setSyncProgress(20);
+                    hasLocalData = true;
                 }
 
                 if (!hasLocalData) {
@@ -111,7 +138,7 @@ export const ProductProvider = ({ children }) => {
                     { data: prodData, error: prodError },
                     { data: catData, error: catError },
                     { data: allData, error: allError },
-                    { data: settingsData, error: settingsError },
+                    { data: settingsData },
                 ] = await Promise.all([
                     supabase.from('products').select('*').order('order_index', { ascending: true }),
                     supabase.from('categories').select('*')
@@ -131,58 +158,42 @@ export const ProductProvider = ({ children }) => {
                 setSyncProgress(50);
 
                 // ── FASE 3: Sync de imágenes ──────────────────────────────────────
-                try {
-                    const { ipcRenderer } = window.require('electron');
+                const syncResult = await startSync((progress, message) => {
+                    setSyncProgress(progress);
+                    setSyncMessage(message);
+                });
 
-                    const progressListener = (event, data) => {
-                        if (data && data.progress !== undefined) {
-                            setSyncProgress(data.progress);
-                            setSyncMessage(data.message || 'Sincronizando...');
-                        }
-                    };
-
-                    ipcRenderer.on('SYNC:PROGRESS', progressListener);
-                    const syncResult = await ipcRenderer.invoke('SYNC:START');
-                    setSyncProgress(100);
+                if (syncResult.success) {
                     setSyncMessage('Sincronización completada');
-                    ipcRenderer.removeListener('SYNC:PROGRESS', progressListener);
-
                     // Solo usar local-asset:// si el sync fue exitoso
-                    if (syncResult && syncResult.success) {
-                        if (prodData) {
-                            prodData.forEach(p => {
-                                if (p.image && !p.image.startsWith('local-asset://')) {
-                                    p.image = `local-asset://${p.image}`;
-                                }
-                            });
-                        }
-                        if (catData) {
-                            catData.forEach(c => {
-                                if (c.image && !c.image.startsWith('local-asset://')) {
-                                    c.image = `local-asset://${c.image}`;
-                                }
-                            });
-                        }
+                    if (prodData) {
+                        prodData.forEach(p => {
+                            if (p.image && !p.image.startsWith('local-asset://')) {
+                                p.image = `local-asset://${p.image}`;
+                            }
+                        });
                     }
-
-                    // ── FASE 4: Guardar en SQLite para el próximo arranque ─────────
-                    // Guardamos los datos RAW (sin prefijo local-asset://) para que
-                    // el próximo arranque offline pueda usar URLs remotas como fallback.
-                    if (prodData && prodData.length > 0) {
-                        await ipcRenderer.invoke('DATA:SAVE_LOCAL', { type: 'products', data: prodData });
+                    if (catData) {
+                        catData.forEach(c => {
+                            if (c.image && !c.image.startsWith('local-asset://')) {
+                                c.image = `local-asset://${c.image}`;
+                            }
+                        });
                     }
-                    if (catData && catData.length > 0) {
-                        await ipcRenderer.invoke('DATA:SAVE_LOCAL', { type: 'categories', data: catData });
-                    }
-                    if (allData && allData.length > 0) {
-                        await ipcRenderer.invoke('DATA:SAVE_LOCAL', { type: 'allergens', data: allData });
-                    }
-
-                } catch (ipcErr) {
-                    console.warn('[ProductContext] IPC no disponible, usando URLs remotas:', ipcErr.message);
-                    setSyncProgress(100);
+                } else {
                     setSyncMessage('Cargando desde la nube...');
                 }
+
+                setSyncProgress(100);
+
+                // ── FASE 4: Guardar en SQLite para el próximo arranque ─────────
+                // Guardamos datos RAW (sin prefijo local-asset://) para que
+                // el próximo arranque offline pueda usar URLs remotas como fallback.
+                await Promise.all([
+                    saveLocalData('products',  prodData),
+                    saveLocalData('categories', catData),
+                    saveLocalData('allergens',  allData),
+                ]);
 
                 // ── FASE 5: Actualizar estado con datos frescos de Supabase ───────
                 if (!prodError && prodData && prodData.length > 0) setProducts(prodData);
@@ -194,6 +205,8 @@ export const ProductProvider = ({ children }) => {
                 setSyncProgress(100);
             } finally {
                 setLoading(false);
+                // Desbloquear AppLoader una vez que la carga (o el intento) ha terminado
+                setAssetsCached(true);
             }
         };
 

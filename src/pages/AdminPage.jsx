@@ -11,6 +11,7 @@ import AdminProductOrder from '../components/AdminProductOrder';
 import AdminTopSellers from '../components/AdminTopSellers';
 import AdminDailySummary from '../components/AdminDailySummary';
 import AdminPrinterManager from '../components/AdminPrinterManager';
+import ConfirmModal from '../components/ConfirmModal';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { getLocalizedName } from '../context/ProductContext';
@@ -30,6 +31,9 @@ const AdminPage = () => {
         return saved ? parseInt(saved, 10) : 60000;
     });
     
+    // Confirm modal — reemplaza window.confirm()
+    const [confirmState, setConfirmState] = useState(null);
+
     // Restaurant Status Toggle State
     const [isRestaurantOpen, setIsRestaurantOpen] = useState(true);
     const [isLoadingStatus, setIsLoadingStatus] = useState(false);
@@ -70,10 +74,13 @@ const AdminPage = () => {
         navigate('/');
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm(t('delete_confirm'))) {
-            await deleteProduct(id);
-        }
+    const handleDelete = (id) => {
+        setConfirmState({
+            title: t('delete_confirm_title') || '¿Eliminar producto?',
+            message: t('delete_confirm') || 'Esta acción no se puede deshacer.',
+            confirmLabel: t('delete') || 'Eliminar',
+            onConfirm: () => deleteProduct(id),
+        });
     };
 
     const [expandedCategories, setExpandedCategories] = useState(() => {
@@ -122,6 +129,7 @@ const AdminPage = () => {
 
     return (
         <div className="min-h-screen bg-[#12100B] flex flex-col">
+            <ConfirmModal state={confirmState} onClose={() => setConfirmState(null)} />
             {/* Header */}
             <header className="bg-[#12100B] border-b border-[#c28744]/20 sticky top-0 z-10">
                 {/* Top row: back + title + lang */}

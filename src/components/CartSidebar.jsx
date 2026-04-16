@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { X, Trash2, ShoppingBag, ChevronRight, Edit2 } from 'lucide-react';
 import ProductDetail from './ProductDetail';
 import { useLanguage } from '../context/LanguageContext';
+import { useCart } from '../context/CartContext';
 
-const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateItem, total, onCheckout, orderInfo }) => {
+// CartSidebar ahora lee del CartContext directamente — sin prop drilling.
+// Recibe solo `orderInfo` (tipo y número de mesa/pedido) desde KioskFlow.
+const CartSidebar = ({ orderInfo, onCheckout }) => {
     const { t } = useLanguage();
+    const { cart, cartTotal, isCartOpen, setIsCartOpen, removeFromCart, updateCartItem } = useCart();
     const [editingItem, setEditingItem] = useState(null);
 
     const handleSaveEdit = (product, modifiers) => {
@@ -13,15 +17,15 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateItem, t
             selectedModifiers: modifiers,
             totalPrice: product.price + modifiers.reduce((acc, mod) => acc + mod.price, 0)
         };
-        onUpdateItem(editingItem.uniqueId, updatedItem);
+        updateCartItem(editingItem.uniqueId, updatedItem);
         setEditingItem(null);
     };
 
-    if (!isOpen) return null;
+    if (!isCartOpen) return null;
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={onClose}></div>
+            <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
             <div className="fixed right-0 top-0 h-full w-full max-w-md bg-[#FFF8E7] z-50 shadow-2xl flex flex-col transform transition-transform duration-300 animate-slide-in-right">
                 <div className="p-6 border-b border-[#c28744]/20 flex justify-between items-center bg-[#FFF8E7]">
                     <div className="flex flex-col">
@@ -39,20 +43,20 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateItem, t
                         )}
                     </div>
 
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <X size={24} className="text-gray-400" />
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                    {cartItems.length === 0 ? (
+                    {cart.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400 space-y-4 opacity-50">
                             <ShoppingBag size={64} strokeWidth={1} />
                             <p className="text-lg font-medium">{t('empty_cart')}</p>
                             <p className="text-sm">{t('empty_cart_msg')}</p>
                         </div>
                     ) : (
-                        cartItems.map((item) => (
+                        cart.map((item) => (
                             <div key={item.uniqueId} className="bg-white p-4 rounded-xl border border-[#c28744]/20 flex gap-4 group shadow-sm">
                                 <img src={item.image || null} alt={item.name} className="w-20 h-20 object-cover rounded-lg" />
                                 <div className="flex-1">
@@ -76,7 +80,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateItem, t
                                             <Edit2 size={12} /> {t('edit')}
                                         </button>
                                         <button
-                                            onClick={() => onRemoveItem(item.uniqueId)}
+                                            onClick={() => removeFromCart(item.uniqueId)}
                                             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                         >
                                             <Trash2 size={16} />
@@ -88,11 +92,11 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateItem, t
                     )}
                 </div>
 
-                {cartItems.length > 0 && (
+                {cart.length > 0 && (
                     <div className="p-6 bg-[#FFF8E7] border-t border-[#c28744]/20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                         <div className="flex justify-between items-center mb-4">
                             <span className="text-[#5A4033] font-medium">{t('total')}</span>
-                            <span className="text-3xl font-black text-[#2C1A0F]">{parseFloat(total || 0).toFixed(2)}€</span>
+                            <span className="text-3xl font-black text-[#2C1A0F]">{parseFloat(cartTotal || 0).toFixed(2)}€</span>
                         </div>
 
                         <button

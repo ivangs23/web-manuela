@@ -8,6 +8,7 @@ import PaymentScreen from './PaymentScreen';
 import ScreenSaver from './ScreenSaver';
 import CartSidebar from '../components/CartSidebar';
 import { useLanguage } from '../context/LanguageContext';
+import { useCart } from '../context/CartContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { peekNextOrderNumber, commitOrderNumber } from '../utils/orderNumberUtils';
 import useInactivityTimer from '../hooks/useInactivityTimer';
@@ -41,14 +42,12 @@ const KioskFlow = () => {
     const [tableNumber, setTableNumber] = useState(tableFromQR.current || '');
     const [tableInput, setTableInput] = useState('');
     const [orderNumber, setOrderNumber] = useState(null);
-    const [cart, setCart] = useState([]);
-    const [isCartOpen, setIsCartOpen] = useState(false);
     const [showScreensaver, setShowScreensaver] = useState(false);
-    const [isTransitioning, setIsTransitioning] = useState(false);
     const [isRestaurantOpen, setIsRestaurantOpen] = useState(true); // Default open until checked
     const [isCheckingStatus, setIsCheckingStatus] = useState(true); // Loading state for status
     const [saveOrderError, setSaveOrderError] = useState(false);
     const { t } = useLanguage();
+    const { cart, cartTotal, setIsCartOpen, addToCart, clearCart } = useCart();
 
     // Welcome Loading State Tracker
     const [welcomeLoadedCount, setWelcomeLoadedCount] = useState(0);
@@ -109,9 +108,8 @@ const KioskFlow = () => {
     };
 
     const handleIdle = () => {
-        setCart([]);
+        clearCart();
         setOrderNumber(null);
-        setIsCartOpen(false);
         setShowScreensaver(true);
         if (tableFromQR.current) {
             // Acceso por QR: volver a bienvenida con la mesa fija del QR
@@ -131,26 +129,6 @@ const KioskFlow = () => {
         setShowScreensaver(false);
     };
 
-    const addToCart = React.useCallback((product, modifiers = []) => {
-        const cartItem = {
-            ...product,
-            uniqueId: crypto.randomUUID(),
-            selectedModifiers: modifiers,
-            totalPrice: product.price + modifiers.reduce((acc, mod) => acc + mod.price, 0)
-        };
-        setCart(prev => [...prev, cartItem]);
-        setIsCartOpen(true);
-    }, []);
-
-    const removeFromCart = React.useCallback((uniqueId) => {
-        setCart(prev => prev.filter(item => item.uniqueId !== uniqueId));
-    }, []);
-
-    const updateCartItem = React.useCallback((uniqueId, updatedItem) => {
-        setCart(prev => prev.map(item => item.uniqueId === uniqueId ? updatedItem : item));
-    }, []);
-
-    const cartTotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
 
 
     const handleCheckout = () => {
@@ -159,13 +137,9 @@ const KioskFlow = () => {
     };
 
     const handlePaymentSuccess = async () => {
-        // Bloquear temporalmente UI mientras guardamos en bdd
-        setIsTransitioning(true);
         setSaveOrderError(false);
 
         try {
-            // Guardar pedido en Supabase
-            // Si es 'eat-in' usamos el número de mesa como número de pedido para la BDD
             const finalOrderNumber = orderType === 'take-out'
                 ? orderNumber.toString()
                 : `MESA-${tableNumber}`;
@@ -184,22 +158,18 @@ const KioskFlow = () => {
             if (error) {
                 console.error("🚨 Error guardando el pedido en Supabase:", error);
                 setSaveOrderError(true);
-                setIsTransitioning(false);
-                return; // No avanzar — el pedido no se guardó
+                return;
             }
 
-            // Solo si el guardado fue exitoso, completar el flujo
             if (orderType === 'take-out') {
-                commitOrderNumber();
+                await commitOrderNumber();
             }
-            setCart([]);
+            clearCart();
             setOrderNumber(null);
             changeStep('welcome');
         } catch (e) {
             console.error("Excepción al guardar pedido:", e);
             setSaveOrderError(true);
-        } finally {
-            setIsTransitioning(false);
         }
     };
 
@@ -474,14 +444,8 @@ const KioskFlow = () => {
                     </div>
 
                     <CartSidebar
-                        isOpen={isCartOpen}
-                        onClose={() => setIsCartOpen(false)}
-                        cartItems={cart}
-                        onRemoveItem={removeFromCart}
-                        onUpdateItem={updateCartItem}
-                        total={cartTotal}
-                        onCheckout={handleCheckout}
                         orderInfo={{ type: orderType, number: orderType === 'eat-in' ? tableNumber : orderNumber }}
+                        onCheckout={handleCheckout}
                     />
                 </div>
             )}
